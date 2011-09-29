@@ -90,7 +90,9 @@ namespace xn
 
 		XnRecordMedium m_destType;
 		XnChar m_strFileName[XN_FILE_MAX_PATH];
-		FILE* m_pOutFile;
+		int m_hOutFile;
+		XnUInt64 m_nLastBytes;
+		XnUInt64 m_nTotalBytes;
 		XnNodeHandle m_hRecorder;
 		XN_DECLARE_DEFAULT_HASH(XnNodeHandle, NodeWatcher*, NodeWatchersMap);
 		NodeWatchersMap m_nodeWatchersMap;

@@ -43,7 +43,9 @@ XnRecorderOutputStreamInterface RecorderImpl::s_fileOutputStream =
 
 RecorderImpl::RecorderImpl() : 
 	m_hRecorder(NULL),
-	m_pOutFile(NULL),
+	m_hOutFile(-1),
+	m_nTotalBytes(0),
+	m_nLastBytes(0),
 	m_destType(XN_RECORD_MEDIUM_FILE)
 {
 	xnOSMemSet(m_strFileName, 0, sizeof(m_strFileName));
@@ -311,7 +313,7 @@ XnStatus RecorderImpl::SetDestination(XnRecordMedium destType, const XnChar* str
 		//Right now only file destination is supported
 		case XN_RECORD_MEDIUM_FILE:
 		{
-			if (m_pOutFile != NULL)
+			if (m_hOutFile != -1)
 			{
 				XN_LOG_WARNING_RETURN(XN_STATUS_INVALID_OPERATION, XN_MASK_OPEN_NI, "Recorder destination is already set!");
 			}
@@ -462,41 +464,74 @@ void RecorderImpl::CloseFile(void* pCookie)
 
 XnStatus RecorderImpl::OpenFileImpl()
 {
-	if (m_pOutFile != NULL)
+	if (m_hOutFile != -1)
 	{
 		//Already open
 		return XN_STATUS_OK;
 	}
 
-	m_pOutFile = fopen(m_strFileName, "wb");
-	if (m_pOutFile  == NULL)
+	m_hOutFile = open(m_strFileName, O_RDWR | O_TRUNC | O_CREAT, 0644);
+	if (m_hOutFile == -1)
 	{
 		xnLogWarning(XN_MASK_OPEN_NI, "Failed to open file '%s' for writing", m_strFileName);
 		return XN_STATUS_OS_FILE_OPEN_FAILED;
 	}
 
-	return XN_STATUS_OK;	
+	return XN_STATUS_OK;
 }
 
 XnStatus RecorderImpl::WriteFileImpl(const XnChar* strNodeName, 
 									 const void* pData, 
 									 XnUInt32 nSize)
 {
+	//static pthread_t id =  pthread_self();
+	//  XN_ASSERT(id == pthread_self());
+
+	static timespec start={0};
+	if (start.tv_sec==0)
+	  clock_gettime(CLOCK_REALTIME,&start);
+
+	timespec ts;
+	clock_gettime(CLOCK_REALTIME,&ts);
+
+	int64_t delta = (ts.tv_sec - start.tv_sec)*1000L + (ts.tv_nsec - start.tv_nsec)/(1000*1000L);
+
+
+	m_nTotalBytes += nSize;
 	//strNodeName may be NULL
-	XN_VALIDATE_PTR(m_pOutFile, XN_STATUS_ERROR);
-	size_t nBytesWritten = fwrite(pData, 1, nSize, m_pOutFile);
+	//XN_VALIDATE_PTR(m_pOutFile, XN_STATUS_ERROR);
+	size_t nBytesWritten = write(m_hOutFile, pData, nSize);
 	if (nBytesWritten < nSize)
 	{
 		xnLogWarning(XN_MASK_OPEN_NI, "Written only %u bytes out of %u to file", nBytesWritten, nSize);
 		return XN_STATUS_OS_FILE_WRITE_FAILED;
 	}
-	return XN_STATUS_OK;
+
+	const XnUInt64 nCacheSize = 256*1024;
+	if (m_nTotalBytes - m_nLastBytes > nCacheSize) {
+		//fdatasync(m_hOutFile);
+		XnUInt64 nLen = ((m_nTotalBytes - m_nLastBytes)/nCacheSize)*(nCacheSize);
+		if ( sync_file_range(m_hOutFile, m_nLastBytes, nLen,
+				     SYNC_FILE_RANGE_WAIT_BEFORE|
+				     SYNC_FILE_RANGE_WRITE|
+				     SYNC_FILE_RANGE_WAIT_AFTER)) {
+			xnLogWarning(XN_MASK_OPEN_NI, "sync_file_range() failed");
+		}
+		m_nLastBytes += nLen;
+	}
+	timespec after;
+	clock_gettime(CLOCK_REALTIME,&after);
+	int64_t t = (after.tv_sec - ts.tv_sec)*1000*1000L + (after.tv_nsec - ts.tv_nsec)/(1000L);
+
+	printf("%10lld  %+10u  delta: %d   %d\n", m_nTotalBytes, nSize, (int)delta, (int)t);
+
+     return XN_STATUS_OK;
 }
 
 
 XnStatus RecorderImpl::SeekFileImpl(XnOSSeekType seekType, const XnUInt32 nOffset)
 {
-	XN_VALIDATE_PTR(m_pOutFile, XN_STATUS_ERROR);
+        // XN_VALIDATE_PTR(m_pOutFile, XN_STATUS_ERROR);
 	long nOrigin = 0;
 	switch (seekType)
 	{
@@ -514,7 +549,7 @@ XnStatus RecorderImpl::SeekFileImpl(XnOSSeekType seekType, const XnUInt32 nOffse
 		return XN_STATUS_BAD_PARAM;
 	}
 
-	if (fseek(m_pOutFile, nOffset, nOrigin) != 0)
+	if (lseek(m_hOutFile, nOffset, nOrigin) == -1)
 	{
 		return XN_STATUS_ERROR;
 	}
@@ -525,15 +560,15 @@ XnStatus RecorderImpl::SeekFileImpl(XnOSSeekType seekType, const XnUInt32 nOffse
 
 XnUInt32 RecorderImpl::TellFileImpl()
 {
-	return ftell(m_pOutFile);
+	return lseek(m_hOutFile, 0L, SEEK_CUR);
 }
 
 void RecorderImpl::CloseFileImpl()
 {
-	if (m_pOutFile != NULL)
+	if (m_hOutFile != -1)
 	{
-		fclose(m_pOutFile);
-		m_pOutFile = NULL;
+		close(m_hOutFile);
+		m_hOutFile = NULL;
 	}
 }
 
