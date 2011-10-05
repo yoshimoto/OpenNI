@@ -840,7 +840,7 @@ typedef struct XnRecorderOutputStreamInterface
 	 * @param	seekType	 [in]	Specifies how to seek - according to current position, end or beginning.
 	 * @param	nOffset		 [in]	Specifies how many bytes to move
 	 */
-	XnStatus (XN_CALLBACK_TYPE* Seek)(void* pCookie, XnOSSeekType seekType, const XnUInt32 nOffset);
+	XnStatus (XN_CALLBACK_TYPE* Seek)(void* pCookie, XnOSSeekType seekType, const off_t nOffset);
 
 	/**
 	 * Tells the current position in the stream.
@@ -850,7 +850,7 @@ typedef struct XnRecorderOutputStreamInterface
 	 *
 	 * @returns (XnUInt32)-1 on error.
 	 */
-	XnUInt32 (XN_CALLBACK_TYPE* Tell)(void* pCookie);
+	off_t (XN_CALLBACK_TYPE* Tell)(void* pCookie);
 
 	/**
 	 * Closes the stream.
@@ -892,7 +892,7 @@ typedef struct XnPlayerInputStreamInterface
 	 * @param	seekType	 [in]	Specifies how to seek - according to current position, end or beginning.
 	 * @param	nOffset		 [in]	Specifies how many bytes to move
 	 */
-	XnStatus (XN_CALLBACK_TYPE* Seek)(void* pCookie, XnOSSeekType seekType, const XnInt32 nOffset);
+	XnStatus (XN_CALLBACK_TYPE* Seek)(void* pCookie, XnOSSeekType seekType, const off_t nOffset);
 	
 	/**
 	 * Tells the current stream position
@@ -901,7 +901,7 @@ typedef struct XnPlayerInputStreamInterface
 	 *
 	 * @returns (XnUInt32)-1 if there was an error in the stream.
 	 */
-	XnUInt32 (XN_CALLBACK_TYPE* Tell)(void* pCookie);
+	off_t (XN_CALLBACK_TYPE* Tell)(void* pCookie);
 
 	/**
 	 * Closes the stream.

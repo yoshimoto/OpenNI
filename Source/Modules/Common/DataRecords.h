@@ -69,11 +69,11 @@ public:
 	XnUInt32 GetNodeID() const;
 	XnUInt32 GetSize() const; //GetSize() returns just the fields' size, not including the payload
 	XnUInt32 GetPayloadSize() const;
-	XnUInt32 GetUndoRecordPos() const;
+	off_t GetUndoRecordPos() const;
 
 	void SetNodeID(XnUInt32 nNodeID);
 	void SetPayloadSize(XnUInt32 nPayloadSize);
-	void SetUndoRecordPos(XnUInt32 nUndoRecordPos);
+	void SetUndoRecordPos(off_t nUndoRecordPos);
 
 	XnUInt8* GetData(); //GetData() returns the entire encoded record
 	const XnUInt8* GetData() const; //GetData() returns the entire encoded record
@@ -110,7 +110,7 @@ private:
 		XnUInt32 m_nNodeID;
 		XnUInt32 m_nFieldsSize;
 		XnUInt32 m_nPayloadSize;
-		XnUInt32 m_nUndoRecordPos;
+		off_t m_nUndoRecordPos;
 	};
 
 	union
@@ -120,7 +120,7 @@ private:
 	};
 
 	static const XnUInt32 MAGIC;
-	mutable XnUInt32 m_nReadOffset;
+	mutable off_t m_nReadOffset;
 	XnUInt32 m_nMaxSize;
 
 public:
@@ -188,16 +188,16 @@ public:
 	NodeAddedRecord(XnUInt8* pData, XnUInt32 nMaxSize);
 	NodeAddedRecord(const Record& record);
 
-	void SetSeekTablePosition(XnUInt32 nPos);
+	void SetSeekTablePosition(off_t nPos);
 
-	XnUInt32 GetSeekTablePosition();
+	off_t GetSeekTablePosition();
 
 	XnStatus Encode();
 	XnStatus Decode();
 	XnStatus AsString(XnChar* strDest, XnUInt32 nSize, XnUInt32& nCharsWritten);
 
 private:
-	XnUInt32 m_nSeekTablePosition;
+	off_t m_nSeekTablePosition;
 };
 
 class NodeRemovedRecord : public Record
@@ -335,7 +335,7 @@ typedef struct
 {
 	XnUInt64 nTimestamp;
 	XnUInt32 nConfigurationID;
-	XnUInt32 nSeekPos;
+        off_t nSeekPos;
 } DataIndexEntry;
 
 class DataIndexRecordHeader : public Record

@@ -30,21 +30,6 @@
 
 #define XN_PLAYBACK_SPEED_SANITY_SLEEP 2000
 
-#include <execinfo.h>
-#define BACKTRACE()							\
-	do {								\
-		char tmp[1024];						\
-		size_t len;						\
-		len = snprintf(tmp, sizeof(tmp), "**START** %s\n", __PRETTY_FUNCTION__); \
-		write(1, tmp, len);					\
-		void *trace[128];					\
-		int i;							\
-		int n = backtrace(trace, sizeof(trace) / sizeof(trace[0])); \
-		backtrace_symbols_fd(trace, n, 1);			\
-		len = snprintf(tmp, sizeof(tmp), "**END** %s\n", __PRETTY_FUNCTION__); \
-		write(1, tmp, len);					\
-	} while (0)
-
 namespace xn
 {
 
@@ -224,7 +209,6 @@ XnModuleNodeHandle PlayerImpl::ModuleHandle()
 
 XnStatus XN_CALLBACK_TYPE PlayerImpl::OpenFile(void* pCookie)
 {
-	BACKTRACE();
 	PlayerImpl* pThis = (PlayerImpl*)pCookie;
 	XN_VALIDATE_INPUT_PTR(pThis);
 	return pThis->OpenFileImpl();
@@ -232,24 +216,21 @@ XnStatus XN_CALLBACK_TYPE PlayerImpl::OpenFile(void* pCookie)
 
 XnStatus XN_CALLBACK_TYPE PlayerImpl::ReadFile(void* pCookie, void* pBuffer, XnUInt32 nSize, XnUInt32* pnBytesRead)
 {
-	BACKTRACE();
 	PlayerImpl* pThis = (PlayerImpl*)pCookie;
 	XN_VALIDATE_INPUT_PTR(pThis);
 	XnUInt32 nBytesRead = 0;
 	return pThis->ReadFileImpl(pBuffer, nSize, (pnBytesRead != NULL) ? *pnBytesRead : nBytesRead);
 }
 
-XnStatus XN_CALLBACK_TYPE PlayerImpl::SeekFile(void* pCookie, XnOSSeekType seekType, const XnInt32 nOffset)
+XnStatus XN_CALLBACK_TYPE PlayerImpl::SeekFile(void* pCookie, XnOSSeekType seekType, const off_t nOffset)
 {
-	BACKTRACE();
 	PlayerImpl* pThis = (PlayerImpl*)pCookie;
 	XN_VALIDATE_INPUT_PTR(pThis);
 	return pThis->SeekFileImpl(seekType, nOffset);
 }
 
-XnUInt32 XN_CALLBACK_TYPE PlayerImpl::TellFile(void* pCookie)
+off_t XN_CALLBACK_TYPE PlayerImpl::TellFile(void* pCookie)
 {
-	BACKTRACE();
 	PlayerImpl* pThis = (PlayerImpl*)pCookie;
 	XN_VALIDATE_PTR(pThis, (XnUInt32)-1);
 	return pThis->TellFileImpl();
@@ -257,7 +238,6 @@ XnUInt32 XN_CALLBACK_TYPE PlayerImpl::TellFile(void* pCookie)
 
 void XN_CALLBACK_TYPE PlayerImpl::CloseFile(void* pCookie)
 {
-	BACKTRACE();
 	PlayerImpl* pThis = (PlayerImpl*)pCookie;
 	if (pThis == NULL)
 	{
@@ -297,7 +277,7 @@ XnStatus PlayerImpl::ReadFileImpl(void* pData, XnUInt32 nSize, XnUInt32 &nBytesR
 	return XN_STATUS_OK;
 }
 
-XnStatus PlayerImpl::SeekFileImpl(XnOSSeekType seekType, XnInt32 nOffset)
+XnStatus PlayerImpl::SeekFileImpl(XnOSSeekType seekType, off_t nOffset)
 {
 	XN_VALIDATE_PTR(m_pInFile, XN_STATUS_ERROR);
 	long nOrigin = 0;
@@ -317,7 +297,7 @@ XnStatus PlayerImpl::SeekFileImpl(XnOSSeekType seekType, XnInt32 nOffset)
 			return XN_STATUS_BAD_PARAM;
 	}
 	
-	if (fseek(m_pInFile, nOffset, nOrigin) != 0)
+	if (fseek(m_pInFile, (long)nOffset, nOrigin) != 0)
 	{
 		return XN_STATUS_ERROR;
 	}
@@ -325,7 +305,7 @@ XnStatus PlayerImpl::SeekFileImpl(XnOSSeekType seekType, XnInt32 nOffset)
 	return XN_STATUS_OK;	
 }
 
-XnUInt32 PlayerImpl::TellFileImpl()
+off_t PlayerImpl::TellFileImpl()
 {
 	XN_VALIDATE_PTR(m_pInFile, (XnUInt32)-1);
 	return ftell(m_pInFile);

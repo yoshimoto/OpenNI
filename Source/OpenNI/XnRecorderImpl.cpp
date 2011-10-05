@@ -29,22 +29,6 @@
 #include "XnPropNames.h"
 #include <XnCodecIDs.h>
 
-#include <execinfo.h>
-
-#define BACKTRACE()							\
-	do {								\
-		char tmp[1024];						\
-		size_t len;						\
-		len = snprintf(tmp, sizeof(tmp), "**START** %s\n", __PRETTY_FUNCTION__); \
-		write(1, tmp, len);					\
-		void *trace[128];					\
-		int i;							\
-		int n = backtrace(trace, sizeof(trace) / sizeof(trace[0])); \
-		backtrace_symbols_fd(trace, n, 1);			\
-		len = snprintf(tmp, sizeof(tmp), "**END** %s\n", __PRETTY_FUNCTION__); \
-		write(1, tmp, len);					\
-	} while (0)
-
 namespace xn 
 {
 
@@ -440,7 +424,6 @@ XnStatus RecorderImpl::Record()
 
 XnStatus RecorderImpl::OpenFile(void* pCookie)
 {
-	BACKTRACE();
 	RecorderImpl* pThis = (RecorderImpl*)pCookie;
 	XN_VALIDATE_INPUT_PTR(pThis);
 	return pThis->OpenFileImpl();
@@ -448,24 +431,21 @@ XnStatus RecorderImpl::OpenFile(void* pCookie)
 
 XnStatus RecorderImpl::WriteFile(void* pCookie, const XnChar* strNodeName, const void* pData, XnUInt32 nSize)
 {
-	BACKTRACE();
 	RecorderImpl* pThis = (RecorderImpl*)pCookie;
 	XN_VALIDATE_INPUT_PTR(pThis);
 	return pThis->WriteFileImpl(strNodeName, pData, nSize);
 }
 
 
-XnStatus XN_CALLBACK_TYPE RecorderImpl::SeekFile(void* pCookie, XnOSSeekType seekType, const XnUInt32 nOffset)
+XnStatus XN_CALLBACK_TYPE RecorderImpl::SeekFile(void* pCookie, XnOSSeekType seekType, const off_t nOffset)
 {
-	BACKTRACE();
 	RecorderImpl* pThis = (RecorderImpl*)pCookie;
 	XN_VALIDATE_INPUT_PTR(pThis);
 	return pThis->SeekFileImpl(seekType, nOffset);
 }
 
-XnUInt32 XN_CALLBACK_TYPE RecorderImpl::TellFile(void* pCookie)
+off_t XN_CALLBACK_TYPE RecorderImpl::TellFile(void* pCookie)
 {
-	BACKTRACE();
 	RecorderImpl* pThis = (RecorderImpl*)pCookie;
 	XN_VALIDATE_INPUT_PTR(pThis);
 	return pThis->TellFileImpl();
@@ -473,7 +453,6 @@ XnUInt32 XN_CALLBACK_TYPE RecorderImpl::TellFile(void* pCookie)
 
 void RecorderImpl::CloseFile(void* pCookie)
 {
-	BACKTRACE();
 	RecorderImpl* pThis = (RecorderImpl*)pCookie;
 	if (pThis == NULL)
 	{
@@ -550,7 +529,7 @@ XnStatus RecorderImpl::WriteFileImpl(const XnChar* strNodeName,
 }
 
 
-XnStatus RecorderImpl::SeekFileImpl(XnOSSeekType seekType, const XnUInt32 nOffset)
+XnStatus RecorderImpl::SeekFileImpl(XnOSSeekType seekType, const off_t nOffset)
 {
         // XN_VALIDATE_PTR(m_pOutFile, XN_STATUS_ERROR);
 	long nOrigin = 0;
@@ -579,7 +558,7 @@ XnStatus RecorderImpl::SeekFileImpl(XnOSSeekType seekType, const XnUInt32 nOffse
 }
 
 
-XnUInt32 RecorderImpl::TellFileImpl()
+off_t RecorderImpl::TellFileImpl()
 {
 	return lseek(m_hOutFile, 0L, SEEK_CUR);
 }
