@@ -218,10 +218,10 @@ XnStatus PlayerNode::SeekToFrame(const XnChar* strNodeName, XnInt32 nFrameOffset
 	return XN_STATUS_OK;
 }
 
-XnStatus PlayerNode::UndoRecord(PlayerNode::RecordUndoInfo& undoInfo, XnUInt32 nDestPos, XnBool& bUndone)
+XnStatus PlayerNode::UndoRecord(PlayerNode::RecordUndoInfo& undoInfo, off_t nDestPos, XnBool& bUndone)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
-	XnUInt32 nOriginalPos = TellStream();
+	off_t nOriginalPos = TellStream();
 	bUndone = FALSE;
 	Record record(m_pRecordBuffer, RECORD_MAX_SIZE);
 	while ((undoInfo.nRecordPos > nDestPos) && (undoInfo.nUndoRecordPos != 0))
@@ -342,7 +342,7 @@ XnStatus PlayerNode::SeekToFrameAbsolute(XnUInt32 nNodeID, XnUInt32 nDestFrame)
 	DataIndexEntry** pDataIndex = GetSeekLocationsFromDataIndex(nNodeID, nDestFrame);
 	if (pDataIndex != NULL)
 	{
-		XnUInt32 nLastPos = 0;
+		off_t nLastPos = 0;
 
 		// move each node to its relevant data
 		for (XnUInt32 i = 0; i < m_nMaxNodes; i++)
@@ -356,7 +356,7 @@ XnStatus PlayerNode::SeekToFrameAbsolute(XnUInt32 nNodeID, XnUInt32 nDestFrame)
 				XN_IS_STATUS_OK(nRetVal);
 
 				// check for latest position. This will be directly after the frame we seeked to.
-				XnUInt32 nPos = TellStream();
+				off_t nPos = TellStream();
 				if (nPos > nLastPos)
 				{
 					nLastPos = nPos;
@@ -370,7 +370,7 @@ XnStatus PlayerNode::SeekToFrameAbsolute(XnUInt32 nNodeID, XnUInt32 nDestFrame)
 	else
 	{
 		// perform old seek
-		XnUInt32 nStartPos = TellStream();
+		off_t nStartPos = TellStream();
 		XnUInt32 nNextFrame = pPlayerNodeInfo->nCurFrame + 1;
 		XnUInt32 nFrames = pPlayerNodeInfo->nFrames;
 		XnStatus nRetVal = XN_STATUS_OK;
@@ -384,8 +384,8 @@ XnStatus PlayerNode::SeekToFrameAbsolute(XnUInt32 nNodeID, XnUInt32 nDestFrame)
 		else if (nDestFrame < nNextFrame)
 		{
 			//Seek backwards
-			XnUInt32 nDestRecordPos = pPlayerNodeInfo->newDataUndoInfo.nRecordPos;
-			XnUInt32 nUndoRecordPos = pPlayerNodeInfo->newDataUndoInfo.nUndoRecordPos;
+			off_t nDestRecordPos = pPlayerNodeInfo->newDataUndoInfo.nRecordPos;
+			off_t nUndoRecordPos = pPlayerNodeInfo->newDataUndoInfo.nUndoRecordPos;
 			NewDataRecordHeader record(m_pRecordBuffer, RECORD_MAX_SIZE);
 			
 			/*Scan back through the frames' undo positions until we get to a frame number that is smaller or equal
@@ -713,13 +713,14 @@ XnStatus PlayerNode::ReadRecord(Record &record)
 	return XN_STATUS_OK;
 }
 
-XnStatus PlayerNode::SeekStream(XnOSSeekType seekType, XnInt32 nOffset)
+
+XnStatus PlayerNode::SeekStream(XnOSSeekType seekType, off_t nOffset)
 {
 	XN_VALIDATE_INPUT_PTR(m_pInputStream);
 	return m_pInputStream->Seek(m_pStreamCookie, seekType, nOffset);
 }
 
-XnUInt32 PlayerNode::TellStream()
+off_t PlayerNode::TellStream()
 {
 	XN_VALIDATE_PTR(m_pInputStream, (XnUInt32)-1);
 	return m_pInputStream->Tell(m_pStreamCookie);
@@ -888,7 +889,7 @@ XnStatus PlayerNode::HandleNodeAdded_1_0_0_4_Record(NodeAdded_1_0_0_4_Record rec
 	if (xnIsTypeGenerator(type))
 	{
 		// we need to look for the DataBegin record to have number of frames, etc.
-		XnUInt32 nStartPos = TellStream();
+	       	off_t nStartPos = TellStream();
 
 		// NOTE: this overwrites the current NodeAdded record buffer!!!
 		nRetVal = SeekToRecordByType(nNodeID, RECORD_NODE_DATA_BEGIN);
@@ -964,7 +965,7 @@ XnStatus PlayerNode::HandleNodeAddedRecord(NodeAddedRecord record)
 	// get seek table (if exists)
 	if (record.GetNumberOfFrames() > 0 && record.GetSeekTablePosition() != 0)
 	{
-		XnUInt32 nCurrPos = TellStream();
+		off_t nCurrPos = TellStream();
 
 		nRetVal = SeekStream(XN_OS_SEEK_SET, record.GetSeekTablePosition());
 		XN_IS_STATUS_OK(nRetVal);
@@ -990,10 +991,10 @@ XnStatus PlayerNode::SeekToRecordByType(XnUInt32 nNodeID, RecordType type)
 	
 	Record record(m_pRecordBuffer, RECORD_MAX_SIZE);
 
-	XnUInt32 nStartPos = TellStream();
+	off_t nStartPos = TellStream();
 
 	XnBool bFound = FALSE;
-	XnUInt32 nPosBeforeRecord = 0;
+	off_t nPosBeforeRecord = 0;
 	while (!bFound && nRetVal == XN_STATUS_OK)
 	{
 		nPosBeforeRecord = TellStream();
@@ -1490,7 +1491,7 @@ XnStatus PlayerNode::SeekToTimeStampAbsolute(XnUInt64 nDestTimeStamp)
 {
 	XnStatus nRetVal = XN_STATUS_OK;
 	XnUInt64 nRecordTimeStamp = 0LL;
-	XnUInt32 nStartPos = TellStream(); //We'll revert to this in case nDestTimeStamp is beyond end of stream
+	off_t nStartPos = TellStream(); //We'll revert to this in case nDestTimeStamp is beyond end of stream
 	XN_IS_STATUS_OK(nRetVal);
 
 	if (nDestTimeStamp < m_nTimeStamp)
@@ -1619,8 +1620,8 @@ PlayerNode::PlayerNodeInfo* PlayerNode::GetPlayerNodeInfoByName(const XnChar* st
 
 XnStatus PlayerNode::SaveRecordUndoInfo(PlayerNodeInfo* pPlayerNodeInfo, 
 										const XnChar* strPropName, 
-										XnUInt32 nRecordPos, 
-										XnUInt32 nUndoRecordPos)
+										off_t nRecordPos, 
+										off_t nUndoRecordPos)
 {
 	RecordUndoInfo recordUndoInfo;
 	recordUndoInfo.nRecordPos = nRecordPos;
@@ -1630,7 +1631,7 @@ XnStatus PlayerNode::SaveRecordUndoInfo(PlayerNodeInfo* pPlayerNodeInfo,
 	return XN_STATUS_OK;
 }
 
-XnStatus PlayerNode::GetRecordUndoInfo(PlayerNodeInfo* pPlayerNodeInfo, const XnChar* strPropName, XnUInt32& nRecordPos, XnUInt32& nUndoRecordPos)
+XnStatus PlayerNode::GetRecordUndoInfo(PlayerNodeInfo* pPlayerNodeInfo, const XnChar* strPropName, off_t& nRecordPos, off_t& nUndoRecordPos)
 {
 	RecordUndoInfo *pRecordUndoInfo = NULL;
 	XnStatus nRetVal = pPlayerNodeInfo->recordUndoInfoMap.Get(strPropName, pRecordUndoInfo);

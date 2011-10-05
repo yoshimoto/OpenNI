@@ -69,16 +69,15 @@ namespace xn
 
 	private:
 		static XnStatus XN_CALLBACK_TYPE OpenFile(void* pCookie);
-		static XnStatus XN_CALLBACK_TYPE WriteFile(void* pCookie, const XnChar* strNodeName, 
-			const void* pData, XnUInt32 nSize);
-		static XnStatus XN_CALLBACK_TYPE SeekFile(void* pCookie, XnOSSeekType seekType, const XnUInt32 nOffset);
-		static XnUInt32 XN_CALLBACK_TYPE TellFile(void* pCookie);
+		static XnStatus XN_CALLBACK_TYPE WriteFile(void* pCookie, const XnChar* strNodeName, const void* pData, XnUInt32 nSize);
+		static XnStatus XN_CALLBACK_TYPE SeekFile(void* pCookie, XnOSSeekType seekType, const off_t nOffset);
+		static off_t XN_CALLBACK_TYPE TellFile(void* pCookie);
 		static void XN_CALLBACK_TYPE CloseFile(void* pCookie);
 
 		XnStatus OpenFileImpl();
 		XnStatus WriteFileImpl(const XnChar* strNodeName, const void* pData, XnUInt32 nSize);
-		XnStatus SeekFileImpl(XnOSSeekType seekType, const XnUInt32 nOffset);
-		XnUInt32 TellFileImpl();
+		XnStatus SeekFileImpl(XnOSSeekType seekType, const off_t nOffset);
+		off_t TellFileImpl();
 		void CloseFileImpl();
 
 		XnCodecID GetDefaultCodecID(ProductionNode& node);

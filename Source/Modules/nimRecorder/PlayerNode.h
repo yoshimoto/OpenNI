@@ -62,8 +62,8 @@ private:
 	{
 		RecordUndoInfo() { Reset(); }
 		void Reset() { nRecordPos = 0; nUndoRecordPos = 0; }
-		XnUInt32 nRecordPos;
-		XnUInt32 nUndoRecordPos;
+		off_t nRecordPos;
+		off_t nUndoRecordPos;
 	};
 
 	XN_DECLARE_STRINGS_HASH(RecordUndoInfo, RecordUndoInfoMap);
@@ -77,7 +77,7 @@ private:
 
 		XnBool bValid;
 		XnChar strName[XN_MAX_NAME_LENGTH];
-		XnUInt32 nLastDataPos;
+		off_t nLastDataPos;
 		XnCodecID compression;
 		XnUInt32 nFrames;
 		XnUInt32 nCurFrame;
@@ -93,7 +93,7 @@ private:
 	XnStatus ProcessRecord(XnBool bProcessPayload);
 	XnStatus SeekToTimeStampAbsolute(XnUInt64 nDestTimeStamp);
 	XnStatus SeekToTimeStampRelative(XnInt64 nOffset);
-	XnStatus UndoRecord(PlayerNode::RecordUndoInfo& undoInfo, XnUInt32 nDestPos, XnBool& nUndone);
+	XnStatus UndoRecord(PlayerNode::RecordUndoInfo& undoInfo, off_t nDestPos, XnBool& nUndone);
 	XnStatus SeekToFrameAbsolute(XnUInt32 nNodeID, XnUInt32 nFrameNumber);
 	XnStatus ProcessEachNodeLastData(XnUInt32 nIDToProcessLast);
 
@@ -103,8 +103,8 @@ private:
 	XnStatus ReadRecordFields(Record& record);
 	//ReadRecord reads just the fields of the record, not the payload.
 	XnStatus ReadRecord(Record& record);
-	XnStatus SeekStream(XnOSSeekType seekType, XnInt32 nOffset);
-	XnUInt32 TellStream();
+	XnStatus SeekStream(XnOSSeekType seekType, off_t nOffset);
+	off_t TellStream();
 	XnStatus CloseStream();
 
 	XnStatus HandleRecord(Record& record, XnBool bHandleRecord);
@@ -126,8 +126,8 @@ private:
 	XnStatus RemovePlayerNodeInfo(XnUInt32 nNodeID);
 	XnUInt32 GetPlayerNodeIDByName(const XnChar* strNodeName);
 	PlayerNodeInfo* GetPlayerNodeInfoByName(const XnChar* strNodeName);
-	XnStatus SaveRecordUndoInfo(PlayerNodeInfo* pPlayerNodeInfo, const XnChar* strPropName, XnUInt32 nRecordPos, XnUInt32 nUndoRecordPos);
-	XnStatus GetRecordUndoInfo(PlayerNodeInfo* pPlayerNodeInfo, const XnChar* strPropName, XnUInt32& nRecordPos, XnUInt32& nUndoRecordPos);
+	XnStatus SaveRecordUndoInfo(PlayerNodeInfo* pPlayerNodeInfo, const XnChar* strPropName, off_t nRecordPos, off_t nUndoRecordPos);
+	XnStatus GetRecordUndoInfo(PlayerNodeInfo* pPlayerNodeInfo, const XnChar* strPropName, off_t& nRecordPos, off_t& nUndoRecordPos);
 	XnStatus SkipRecordPayload(Record record);
 	XnStatus SeekToRecordByType(XnUInt32 nNodeID, RecordType type);
 	DataIndexEntry* FindTimestampInDataIndex(XnUInt32 nNodeID, XnUInt64 nTimestamp);

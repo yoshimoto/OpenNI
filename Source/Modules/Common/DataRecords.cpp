@@ -73,7 +73,7 @@ XnUInt32 Record::GetPayloadSize() const
 	return m_pHeader->m_nPayloadSize;
 }
 
-XnUInt32 Record::GetUndoRecordPos() const
+off_t Record::GetUndoRecordPos() const
 {
 	return m_pHeader->m_nUndoRecordPos;
 }
@@ -88,7 +88,7 @@ void Record::SetPayloadSize(XnUInt32 nPayloadSize)
 	m_pHeader->m_nPayloadSize = nPayloadSize;
 }
 
-void Record::SetUndoRecordPos(XnUInt32 nUndoRecordPos)
+void Record::SetUndoRecordPos(off_t nUndoRecordPos)
 {
 	m_pHeader->m_nUndoRecordPos = nUndoRecordPos;
 }
@@ -489,12 +489,12 @@ NodeAddedRecord::NodeAddedRecord(const Record& record) :
 {
 }
 
-void NodeAddedRecord::SetSeekTablePosition(XnUInt32 nPos)
+void NodeAddedRecord::SetSeekTablePosition(off_t nPos)
 {
 	m_nSeekTablePosition = nPos;
 }
 
-XnUInt32 NodeAddedRecord::GetSeekTablePosition()
+off_t NodeAddedRecord::GetSeekTablePosition()
 {
 	return m_nSeekTablePosition;
 }
