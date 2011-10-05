@@ -568,7 +568,7 @@ void RecorderImpl::CloseFileImpl()
 	if (m_hOutFile != -1)
 	{
 		close(m_hOutFile);
-		m_hOutFile = NULL;
+		m_hOutFile = 0;
 	}
 }
 
