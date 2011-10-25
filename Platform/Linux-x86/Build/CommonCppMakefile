@@ -61,6 +61,9 @@ ifneq ("$(TARGET_SYS_ROOT)","/")
 	LDFLAGS += --sysroot=$(TARGET_SYS_ROOT)
 endif
 
+# enable large file support
+CFLAGS += -D_FILE_OFFSET_BITS=64
+
 # set Debug / Release flags
 ifeq "$(CFG)" "Debug"
 	CFLAGS += -g
@@ -82,7 +85,6 @@ ifneq "$(LIB_NAME)" ""
 		OUTPUT_NAME = lib$(LIB_NAME).so
 		OUTPUT_COMMAND = $(CXX) -o $(OUTPUT_FILE) $(OBJ_FILES) $(LDFLAGS) -shared
 	else
-		CFLAGS += -D_FILE_OFFSET_BITS=64
 		LDFLAGS += -undefined error
 		OUTPUT_NAME = lib$(LIB_NAME).dylib
 		OUTPUT_COMMAND = $(CXX) -o $(OUTPUT_FILE) $(OBJ_FILES) $(LDFLAGS) -dynamiclib -headerpad_max_install_names
@@ -127,7 +129,7 @@ $(OUTPUT_FILE): $(OBJ_FILES)
 
 clean-objs:
 	rm -rf $(OBJ_FILES)
-	
+
 clean-defs:
 	rm -rf $(DEP_FILES)
 
