@@ -484,19 +484,6 @@ XnStatus RecorderImpl::WriteFileImpl(const XnChar* strNodeName,
 									 const void* pData, 
 									 XnUInt32 nSize)
 {
-	//static pthread_t id =  pthread_self();
-	//  XN_ASSERT(id == pthread_self());
-
-	static timespec start={0};
-	if (start.tv_sec==0)
-	  clock_gettime(CLOCK_REALTIME,&start);
-
-	timespec ts;
-	clock_gettime(CLOCK_REALTIME,&ts);
-
-	int64_t delta = (ts.tv_sec - start.tv_sec)*1000L + (ts.tv_nsec - start.tv_nsec)/(1000*1000L);
-
-
 	m_nTotalBytes += nSize;
 	//strNodeName may be NULL
 	//XN_VALIDATE_PTR(m_pOutFile, XN_STATUS_ERROR);
@@ -509,7 +496,6 @@ XnStatus RecorderImpl::WriteFileImpl(const XnChar* strNodeName,
 
 	const XnUInt64 nCacheSize = 256*1024;
 	if (m_nTotalBytes - m_nLastBytes > nCacheSize) {
-		//fdatasync(m_hOutFile);
 		XnUInt64 nLen = ((m_nTotalBytes - m_nLastBytes)/nCacheSize)*(nCacheSize);
 		if ( sync_file_range(m_hOutFile, m_nLastBytes, nLen,
 				     SYNC_FILE_RANGE_WAIT_BEFORE|
@@ -519,11 +505,6 @@ XnStatus RecorderImpl::WriteFileImpl(const XnChar* strNodeName,
 		}
 		m_nLastBytes += nLen;
 	}
-	timespec after;
-	clock_gettime(CLOCK_REALTIME,&after);
-	int64_t t = (after.tv_sec - ts.tv_sec)*1000*1000L + (after.tv_nsec - ts.tv_nsec)/(1000L);
-
-	printf("%10lld  %+10u  delta: %d   %d\n", m_nTotalBytes, nSize, (int)delta, (int)t);
 
      return XN_STATUS_OK;
 }
